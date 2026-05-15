@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Common/Common.csproj" />
+  <Project Path="src/TpsApi/TpsApi.csproj" />
+</Solution>
