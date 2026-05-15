@@ -81,15 +81,42 @@ Controller  →  Service  →  IExternalClient（声明式接口）
 
 ## 配置体系
 
-三张配置表，库配分离：
+三张配置表，库配分离。服务标识和功能标识是代码与配置之间的关联键，必须严格一致。
 
-| 表 | 内容 | 关键字段 |
-|----|------|---------|
-| `tps_service_config` | 服务地址 + 密钥 | `service_code`（服务标识）, `base_url`, `config_json` |
-| `tps_func_config` | 功能路由 | `func_code`（功能标识）, `service_id`, `path` |
-| `tps_func_rate_limit_rule` | 限流规则 | `func_id`, `window_seconds`, `max_requests`, `burst_per_second` |
+### tps_service_config（服务配置）
 
-服务标识和功能标识是代码与配置之间的关联键，必须严格一致。
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | int unsigned | 主键 |
+| `service_code` | varchar(50) | 服务标识，与 `[ServiceCode]` 对应 |
+| `service_type` | tinyint | 1=HTTP, 2=SDK |
+| `base_url` | varchar(255) | 基础地址（SDK 类型留空） |
+| `config_json` | varchar(2000) | 鉴权配置 JSON（AppKey/Secret 等） |
+| `enabled` | tinyint | 1=启用, 0=禁用 |
+| `is_deleted` | tinyint | 0=正常, 1=删除 |
+
+### tps_func_config（功能配置）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | int unsigned | 主键 |
+| `func_code` | varchar(50) | 功能标识，与 `[FuncCode]` 对应 |
+| `service_id` | int unsigned | 关联 `tps_service_config.id` |
+| `path` | varchar(255) | 路由地址（Attribute 未指定时从此读取） |
+| `enabled` | tinyint | 1=启用, 0=禁用 |
+| `is_deleted` | tinyint | 0=正常, 1=删除 |
+
+### tps_func_rate_limit_rule（限流规则）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | int unsigned | 主键 |
+| `func_id` | int unsigned | 关联 `tps_func_config.id` |
+| `window_seconds` | int | 时间窗口（秒） |
+| `max_requests` | int | 窗口内最大请求数 |
+| `burst_per_second` | int | 令牌桶每秒补充量（防突刺） |
+| `enabled` | tinyint | 1=启用, 0=禁用 |
+| `is_deleted` | tinyint | 0=正常, 1=删除 |
 
 令牌产生速率 = `max_requests / window_seconds`，`burst_per_second` 控制桶容量允许一定突发。
 
